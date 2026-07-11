@@ -7,10 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "test": "vitest run",
-    "seed": "tsx src/scripts/seed.ts",
-    "test:concurrency": "tsx src/scripts/concurrency-test.ts",
-    "lint": "tsc -p tsconfig.json --noEmit"
+    "seed": "tsx src/scripts/seed.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -33,7 +30,6 @@
     "@types/node": "^22.14.0",
     "eslint": "^9.22.0",
     "tsx": "^4.19.3",
-    "typescript": "^5.8.2",
-    "vitest": "^3.1.1"
+    "typescript": "^5.8.2"
   }
 }
