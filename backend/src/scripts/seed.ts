@@ -32,7 +32,7 @@ await User.findOneAndUpdate(
 const doctorUser = await User.findOneAndUpdate(
   { email: "doctor@emr.local" },
   {
-    name: "Dr. Maya Rao",
+    name: "Dr. Albin N J",
     email: "doctor@emr.local",
     passwordHash: await hashPassword("Doctor123!"),
     role: "DOCTOR",

@@ -168,7 +168,11 @@ Successful response format:
 }
 ```
 
-More details are available in [backend/API.md](backend/API.md).
+Swagger documentation is available:
+
+```text
+http://localhost:4000/api-docs
+```
 
 ## Environment Variables
 
