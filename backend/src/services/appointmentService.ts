@@ -3,6 +3,7 @@ import { Appointment } from "../models/Appointment.js";
 import { Doctor } from "../models/Doctor.js";
 import { Patient } from "../models/Patient.js";
 import { ApiError } from "../utils/apiError.js";
+import { logger } from "../utils/logger.js";
 import { emitAppointment } from "../sockets/appointmentGateway.js";
 import { activeSchedule } from "./scheduleService.js";
 import { generateSlots } from "./slotService.js";
@@ -57,20 +58,20 @@ export const createAppointment = async (
     );
   if (!slot.available) throw new ApiError(409, "Slot already booked");
 
-  const session =
-    input.patient && !input.patientId
-      ? await mongoose.startSession()
-      : undefined;
+  const needsNewPatient = Boolean(input.patient && !input.patientId);
+  const session = needsNewPatient ? await mongoose.startSession() : undefined;
   try {
     let created: any;
-    const work = async () => {
+    let fallbackPatientId: string | undefined;
+    const work = async (activeSession?: mongoose.ClientSession) => {
       let id = input.patientId;
       if (!id && input.patient) {
         const [patient] = await Patient.create(
           [{ ...input.patient, patientCode: patientCode() }],
-          session ? { session } : undefined,
+          activeSession ? { session: activeSession } : undefined,
         );
         id = patient!.id;
+        if (!activeSession) fallbackPatientId = id;
       }
       if (!id)
         throw new ApiError(
@@ -92,11 +93,28 @@ export const createAppointment = async (
             bookingKey: `${input.doctorId}_${input.date}_${slot.startTime}`,
           },
         ],
-        session ? { session } : undefined,
+        activeSession ? { session: activeSession } : undefined,
       );
     };
-    if (session) await session.withTransaction(work);
-    else await work();
+    if (session) {
+      try {
+        await session.withTransaction(() => work(session));
+      } catch (error: any) {
+        if (error?.code !== 20) throw error;
+        logger.warn(
+          "MongoDB transactions unavailable; using compensated standalone booking",
+        );
+
+        // Local standalone MongoDB does not support transactions. Retry without a
+        // session and compensate by removing the new patient if booking fails.
+        try {
+          await work();
+        } catch (fallbackError) {
+          if (fallbackPatientId) await Patient.deleteOne({ _id: fallbackPatientId });
+          throw fallbackError;
+        }
+      }
+    } else await work();
     emitAppointment(input.doctorId, input.date, "appointment:created", created);
     return created;
   } catch (error: any) {

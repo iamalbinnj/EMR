@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-secondary-50: #ecfdf5;
+  --color-secondary-100: #d1fae5;
+  --color-secondary-600: #059669;
+  --color-secondary-700: #047857;
+}
+
+@layer base {
+  body { @apply m-0 bg-slate-50 text-slate-900 antialiased; }
+  button, input, select, textarea { @apply text-sm; }
+}
+
